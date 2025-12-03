@@ -1,0 +1,85 @@
+stages:
+  - build-dev
+  - deploy-dev
+  - build-prod
+  - deploy-prod
+
+# ================================
+# BUILD DESARROLLO
+# ================================
+build_development:
+  stage: build-dev
+  tags:
+    - runner
+  script:
+    - echo 'Instalando dependencias de Node.js para desarrollo'
+    - npm install
+    
+    - echo 'Ejecutando build para desarrollo'
+    - npm run build
+    
+    - echo 'Build de desarrollo completado exitosamente'
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# ================================
+# DEPLOY DESARROLLO
+# ================================
+deploy_development:
+  stage: deploy-dev
+  tags:
+    - runner
+  script:
+    - echo 'Configuración de permisos en la location del proyecto para el DESPLIEGUE | CI/CD entorno de desarrollo'
+    - ssh devops@192.168.120.199 sudo chown -R devops:nginx /Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front
+    
+    - echo 'Eliminación archivos para la nueva instalación del proyecto angular'
+    - ssh devops@192.168.120.199 rm -rf /Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front/*
+    
+    - echo 'Copiado archivos del proyecto para su despliegue'
+    - rsync -avz dist/ devops@192.168.120.199:/Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front/
+    
+    - echo 'Configuración de permisos en la location del proyecto del DESPLIEGUE | CI/CD entorno de desarrollo'
+    - ssh devops@192.168.120.199 sudo chown -R nginx:nginx /Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# ================================
+# BUILD PRODUCCIÓN
+# ================================
+build_production:
+  stage: build-prod
+  tags:
+    - runner
+  script:
+    - echo 'Instalando dependencias de Node.js para producción'
+    - npm ci --production=false
+    
+    - echo 'Ejecutando build para producción'
+    - npm run build -- --configuration production
+    
+    - echo 'Build de producción completado exitosamente'
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ================================
+# DEPLOY PRODUCCIÓN
+# ================================
+deploy_production:
+  stage: deploy-prod
+  tags:
+    - runner
+  script:
+    - echo 'Configuración de permisos en la location del proyecto para el DESPLIEGUE | CI/CD entorno de producción'
+    - ssh devops@192.168.120.199 sudo chown -R devops:nginx /Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front
+    
+    - echo 'Eliminación archivos para la nueva instalación del proyecto angular'
+    - ssh devops@192.168.120.199 rm -rf /Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front/*
+    
+    - echo 'Copiado archivos del proyecto para su despliegue'
+    - rsync -avz dist/ devops@192.168.120.199:/Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front/
+    
+    - echo 'Configuración de permisos en la location del proyecto del DESPLIEGUE | CI/CD entorno de producción'
+    - ssh devops@192.168.120.199 sudo chown -R nginx:nginx /Data/vhosts/fia-dev-app.tpp/httpdocs/gpp/fronts/gpp-front
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
