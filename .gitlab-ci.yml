@@ -19,6 +19,10 @@ build_development:
     - npm run build
     
     - echo 'Build de desarrollo completado exitosamente'
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
 
@@ -41,6 +45,8 @@ deploy_development:
     
     - echo 'Configuración de permisos en la location del proyecto del DESPLIEGUE | CI/CD entorno de desarrollo'
     - ssh devops@192.168.120.199 sudo chown -R nginx:nginx /Data/vhosts/fia-dev-apps.tpp/httpdocs/gpp/fronts/gpp-front
+  dependencies:
+    - build_development
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
 
@@ -59,6 +65,10 @@ build_production:
     - npm run build -- --configuration production
     
     - echo 'Build de producción completado exitosamente'
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -81,5 +91,7 @@ deploy_production:
     
     - echo 'Configuración de permisos en la location del proyecto del DESPLIEGUE | CI/CD entorno de producción'
     - ssh devops@192.168.120.199 sudo chown -R nginx:nginx /Data/vhosts/fia-dev-apps.tpp/httpdocs/gpp/fronts/gpp-front
+  dependencies:
+    - build_production
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
